@@ -1,0 +1,2 @@
+"C:/Program Files/w64devkit/bin/ar.exe" qc libglad.a CMakeFiles/glad.dir/src/glad.c.obj
+"C:/Program Files/w64devkit/bin/ranlib.exe" libglad.a

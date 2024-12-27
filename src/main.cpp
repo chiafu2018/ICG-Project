@@ -15,6 +15,7 @@ void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 unsigned int loadCubemap(std::vector<string> &mFileName);
 unsigned int loadParticle(const std::string &filepath);
+void updateCameraBasedOnView(); 
 
 struct material_t{
     glm::vec3 ambient;
@@ -80,8 +81,20 @@ glm::mat4 palmModel;
 glm::mat4 rockModel;
 
 // scores 
-unsigned int score = 0, lap= 0; 
+unsigned int score = 0, lap= 0;
 
+// this variable is used to test whether this current lap has hit the rock or not. every lap will only minus point one time
+unsigned int lapHitRock = -1; 
+
+enum CameraView {
+    BACK_VIEW,
+    FRONT_VIEW,
+    TOP_VIEW
+};
+
+CameraView currentView = BACK_VIEW;
+
+bool moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
 
 
 const float CAMERA_FOLLOW_DISTANCE = 200.0f; // Distance behind the car
@@ -92,8 +105,9 @@ const float CAR_MOVEMENT_SPEED = 0.1f;
 
 // const float CAR_MIN_Z = -20.0f; // car minimum for generating the smoke 
 // const float CAR_MAX_Z = 675.0f;
-const float CAR_MIN_Z = -29.0f; // car minimum for generating the smoke 
-const float CAR_MAX_Z = 29.0f;
+const float CAR_MIN_Z = -30.0f; // car minimum for generating the smoke 
+// const float CAR_MAX_Z = 29.0f;
+const float CAR_MAX_Z = 0.0f;
 
 // const float CAR_MIN_X = -180.0f;
 // const float CAR_MAX_X = 180.0f;
@@ -102,12 +116,7 @@ const float CAR_MIN_X = -2.0f;
 const float CAR_MAX_X = 2.0f;
 
 
-bool moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, moveCameraRight = false, moveCameraLeft = false;
-
-
-
-
-glm::vec3 smokeBasePosition = glm::vec3(0.0f, 0.0f, 70.0f); 
+glm::vec3 smokeBasePosition; 
 
 
 //// Particles 
@@ -151,72 +160,113 @@ Particle::Particle(ParticleCreateInfo* createInfo) {
 
 
 
-// At global scope
-static std::default_random_engine generator(std::chrono::steady_clock::now().time_since_epoch().count());
+// // At global scope
+// static std::default_random_engine generator(std::chrono::steady_clock::now().time_since_epoch().count());
+
+// float random() {
+//    return float(generator() % 1000) / 1000;
+//   //cout<< a <<endl;
+//   //return a;
+// }
+// // float random() {
+// //     unsigned seed = std::chrono::steady_clock::now().time_since_epoch().count();
+// //     std::default_random_engine generator(seed);
+// //     return float(generator() % 1000) / 1000;
+// // }
+
+// // At global scope
+// // static std::default_random_engine generator(std::chrono::steady_clock::now().time_since_epoch().count());
+// // std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+
+// // float random() {
+// //     float a = distribution(generator);
+// //     cout<< a <<endl;
+// //     return a;
+// // }
+
+// void Particle::update(float rate) {
+// 	t += rate;
+//   float ageFactor = t / lifetime; 
+//  // float velocityScale = glm::mix(1.0f, 0.98f, ageFactor); // Interpolate between 1.0 and 0.8
+//   float spreadFactor = glm::mix(1.0f, 1.1f, ageFactor); // Increase spread as ageFactor grows
+//   //velocity.x *= spreadFactor;
+//   //velocity.y *= spreadFactor;
+//   //velocity *= velocityScale;
+//   //find the min velocity 
+// 	//velocity += rate * acceleration;
+
+
+// 	//float y = float(generator() % 1000)/10000;
+//   float y = glm::mix((random() + 0.2f)* 0.1f, random() * 0.01f, ageFactor);
+//   up_vector.y = y;
+  
+// 	//float x = float(generator() % 10)/10000;
+//   float x = glm::mix((random() - 0.5f)* 0.01f, (random() - 0.5f)* 0.01f, ageFactor);
+//   side_vector.x = x;
+//   // cout<<"lifetime "<<endl;
+//   // cout<<" x " << x << " y "<<y<<endl;
+//   velocity += up_vector + side_vector; 
+// 	position += rate * velocity;
+// 	// if (position.z < 0) {
+// 	// 	velocity.z *= -0.5f
+// 	// 	position.z = 0.0f;
+// 	// }
+
+// 	modelTransform = glm::mat4(1.0f);
+//   //cout<<position.x<<" "<< position.y<<" "<<position.z<<" "<<endl;
+// 	modelTransform = glm::translate(modelTransform, position);
+
+
+//   float heightDiff = position.y - initialHeight;
+//   float heightFactor = glm::clamp(heightDiff / MAX_HEIGHT_DIFFERENCE, 0.0f, 1.0f);
+ 
+//   glm::vec3 lightColor = glm::vec3(0.9f, 0.9f, 0.9f);
+//   //glm::vec3 fadeColor = color + (glm::vec3(1.0f) - color) * ageFactor;
+//   glm::vec3 heightBlendedColor = glm::mix(color, lightColor, ageFactor);
+//   ageFactor *= 1.25;
+// 	tint = glm::vec4(heightBlendedColor, 1.0f - ageFactor);
+
+// }
+
+// At global scope, use thread_local to ensure thread safety and better randomization
+thread_local static std::random_device rd;
+thread_local static std::mt19937 generator(rd());
+thread_local static std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 
 float random() {
-   return float(generator() % 1000) / 1000;
-  //cout<< a <<endl;
-  //return a;
+    return distribution(generator);
 }
-// float random() {
-//     unsigned seed = std::chrono::steady_clock::now().time_since_epoch().count();
-//     std::default_random_engine generator(seed);
-//     return float(generator() % 1000) / 1000;
-// }
-
-// At global scope
-// static std::default_random_engine generator(std::chrono::steady_clock::now().time_since_epoch().count());
-// std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-
-// float random() {
-//     float a = distribution(generator);
-//     cout<< a <<endl;
-//     return a;
-// }
 
 void Particle::update(float rate) {
-	t += rate;
-  float ageFactor = t / lifetime; 
- // float velocityScale = glm::mix(1.0f, 0.98f, ageFactor); // Interpolate between 1.0 and 0.8
-  float spreadFactor = glm::mix(1.0f, 1.1f, ageFactor); // Increase spread as ageFactor grows
-  //velocity.x *= spreadFactor;
-  //velocity.y *= spreadFactor;
-  //velocity *= velocityScale;
-  //find the min velocity 
-	//velocity += rate * acceleration;
-
-
-	//float y = float(generator() % 1000)/10000;
-  float y = glm::mix((random() + 0.2f)* 0.1f, random() * 0.01f, ageFactor);
+  t += rate;
+  float ageFactor = t / lifetime;
+  
+  // Add more randomization to the movement
+  float baseY = (random() + 0.2f) * 0.1f; // Ensures a minimum upward movement
+  float y = glm::mix(baseY, random() * 0.001f, ageFactor);
   up_vector.y = y;
   
-	//float x = float(generator() % 10)/10000;
-  float x = glm::mix((random() - 0.5f)* 0.01f, (random() - 0.5f)* 0.1f, ageFactor);
+  // Add more spread to x movement
+  float spreadX = (random() - 0.5f) * 0.001f;
+  float x = glm::mix(spreadX, (random() - 0.5f) * 0.1f, ageFactor);
   side_vector.x = x;
-  // cout<<"lifetime "<<endl;
-  // cout<<" x " << x << " y "<<y<<endl;
-  velocity += up_vector + side_vector; 
-	position += rate * velocity;
-	// if (position.z < 0) {
-	// 	velocity.z *= -0.5f
-	// 	position.z = 0.0f;
-	// }
-
-	modelTransform = glm::mat4(1.0f);
-  //cout<<position.x<<" "<< position.y<<" "<<position.z<<" "<<endl;
-	modelTransform = glm::translate(modelTransform, position);
-
-
-  float heightDiff = position.y - initialHeight;
-  float heightFactor = glm::clamp(heightDiff / MAX_HEIGHT_DIFFERENCE, 0.0f, 1.0f);
- 
+  
+  // Add small z variation for depth
+  float z = (random() - 0.5f) * 0.01f;
+  side_vector.z = z;
+  
+  velocity += up_vector + side_vector;
+  position += rate * velocity;
+  
+  modelTransform = glm::mat4(1.0f);
+  modelTransform = glm::translate(modelTransform, position);
+  
   glm::vec3 lightColor = glm::vec3(0.9f, 0.9f, 0.9f);
-  //glm::vec3 fadeColor = color + (glm::vec3(1.0f) - color) * ageFactor;
   glm::vec3 heightBlendedColor = glm::mix(color, lightColor, ageFactor);
-  ageFactor *= 1.25;
-	tint = glm::vec4(heightBlendedColor, 1.0f - ageFactor);
-
+  
+  // Smoother alpha fade
+  float alpha = glm::smoothstep(1.0f, 0.0f, ageFactor);
+  tint = glm::vec4(heightBlendedColor, alpha);
 }
 
 //Paricles variables
@@ -305,9 +355,10 @@ void model_setup(){
     palm.object->load_to_buffer(); 
     palm.object->load_texture(textureDir + "palm.jpg");
 
+    smokeBasePosition = glm::vec3(-14.5f + ae86.position.x, -6.8f + ae86.position.y, 70.0f + ae86.position.z);
 
-    rock.position = glm::vec3(0.0f, 20.0f, 0.0f);  // Position below the car
-    rock.scale = glm::vec3(0.5f, 0.5f, 0.1f);  // Large plane surface
+    rock.position = glm::vec3(0.0f, 20.0f, -(rand()%5000 + 3000)); 
+    rock.scale = glm::vec3(0.5f, 0.5f, 0.1f); 
     rock.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     rock.object = new Object(objDir + "rock.obj");
 
@@ -437,8 +488,6 @@ void setup(){
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-
-
 void makeParticles(glm::vec3 position, glm::vec3 incident, glm::vec3 normal) {
 
 	unsigned seed = std::chrono::steady_clock::now().time_since_epoch().count();
@@ -454,8 +503,6 @@ void makeParticles(glm::vec3 position, glm::vec3 incident, glm::vec3 normal) {
 		float x = float(generator() % 100) / 50.f - 1.0f;
 		float y = float(generator() % 100) / 50.f - 1.0f;
 		float z = float(generator() % 100) / 50.f - 1.0f;
-
-
 
 		glm::vec3 randomization = glm::vec3(x, y, z);
 		glm::vec3 randomizedNormal = glm::normalize(0.9f * randomization + normal);
@@ -480,6 +527,9 @@ void gameLogic(){
 
     // change the rock position 
     int choice = rand()%3;
+
+    rock.position.z = -(rand()%5000 + 3000); // generate a number between 3000 - 8000
+
     if(choice == 0){
         rock.position.x = -130;
     }else if(choice == 1){
@@ -492,100 +542,111 @@ void gameLogic(){
 void checkCarCollision(){
     // check if the user hit the rock
 
-    // std::cout<<"Ae86: \n"; 
-    // std::cout<< ae86.position.x <<" "<< ae86.position.y <<" "<< ae86.position.z <<std::endl; 
-    // std::cout<<"Rock: \n"; 
-    // std::cout<< rock.position.x <<" "<< rock.position.y <<" "<< rock.position.z <<std::endl; 
+    float disBetweenCarRock = abs(rock.position.z*rock.scale.z - ae86.position.z*ae86.scale.z); 
 
-
-
-    if(ae86.position.x*65 == rock.position.x && ae86.position.z+2 == rock.position.z && (moveForward||moveBackward)){
-        if(score>200){
-            score -= 200;
-        }else{
-            score = 0;
+    if(lap != lapHitRock){
+        
+        if(ae86.position.x*65 == rock.position.x && disBetweenCarRock < 50.0 && (moveForward||moveBackward)){
+            if(score>200){
+                score -= 200;
+            }else{
+                score = 0;
+            }
+            std::cout << "You hit the rock! " << " Score:" << score << std::endl; 
+            lapHitRock = lap; 
         }
-        std::cout << "You hit the rock! " << " Score:" << score << std::endl; 
+
     }
+
+
 }
 
 
-void carMovementLogic(){
+void carMovementLogic() {
+    bool wasMoving = false;  // Track if the car was actually moving
+
     if (moveForward) {
-        ae86.position.z -= CAR_MOVEMENT_SPEED;
-        smokeBasePosition.z -= CAR_MOVEMENT_SPEED * ae86.scale.z;    
-        
-        if (ae86.position.z <= CAR_MIN_Z) {
+        float newZ = ae86.position.z - CAR_MOVEMENT_SPEED;
+        if (newZ <= CAR_MIN_Z) {
+            // Instead of stopping, wrap around to max Z
             ae86.position.z = CAR_MAX_Z;
-            gameLogic(); 
+            smokeBasePosition.z = CAR_MAX_Z * ae86.scale.z + 70.0f;  // Reset smoke position too
+            gameLogic();
+        } else {
+            ae86.position.z = newZ;
+            smokeBasePosition.z -= CAR_MOVEMENT_SPEED * ae86.scale.z;
+            camera.position.z -= CAR_MOVEMENT_SPEED * ae86.scale.z;
         }
-        else {
-        camera.position.z -= CAR_MOVEMENT_SPEED * ae86.scale.z;
-        }
+        wasMoving = true;
     }
 
     if (moveBackward) {
-        ae86.position.z += CAR_MOVEMENT_SPEED;
-        smokeBasePosition.z += CAR_MOVEMENT_SPEED * ae86.scale.z;    
-        
-        if (ae86.position.z >= CAR_MAX_Z) {
+        float newZ = ae86.position.z + CAR_MOVEMENT_SPEED;
+        if (newZ >= CAR_MAX_Z) {
             ae86.position.z = CAR_MAX_Z;
+            smokeBasePosition.z = CAR_MAX_Z * ae86.scale.z + 70.0f;
+        } else {
+            ae86.position.z = newZ;
+            smokeBasePosition.z += CAR_MOVEMENT_SPEED * ae86.scale.z;
+            camera.position.z += CAR_MOVEMENT_SPEED * ae86.scale.z;
         }
-        else {
-        camera.position.z += CAR_MOVEMENT_SPEED * ae86.scale.z;
-        }
+        wasMoving = true;
     }
 
-    // if (moveLeft) {
-    //     ae86.position.x -= CAR_MOVEMENT_SPEED*2;
-    //     smokeBasePosition.x -= CAR_MOVEMENT_SPEED * ae86.scale.x*2;    
-        
-    //     if (ae86.position.z <= CAR_MIN_X) {
-    //         ae86.position.z = CAR_MIN_X;
-    //     }
-    //     else {
-    //     camera.position.x <= CAR_MOVEMENT_SPEED * ae86.scale.x;
-    //     }
-    // }
 
-    // if (moveRight) {
-    //     ae86.position.x += CAR_MOVEMENT_SPEED*2;
-    //     smokeBasePosition.x += CAR_MOVEMENT_SPEED * ae86.scale.x*2;    
-        
-    //     if (ae86.position.z >= CAR_MAX_X) {
-    //         ae86.position.z = CAR_MIN_X;
-    //     }
-    //     else {
-    //     camera.position.x >= CAR_MOVEMENT_SPEED * ae86.scale.x;
-    //     }
-    // }
 
     if (moveLeft) {
-        ae86.position.x -= CAR_MOVEMENT_SPEED;
-        smokeBasePosition.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;    
+        // float newX = ae86.position.x - CAR_MOVEMENT_SPEED * 10;
+
+
+        if (ae86.position.x <= CAR_MIN_X) {
+            // ae86.position.x = CAR_MIN_X;
+            smokeBasePosition.x = CAR_MIN_X * ae86.scale.x - 14.5f;
+        } else {
+            // ae86.position.x = newX;
+            // smokeBasePosition.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;
+
+            smokeBasePosition.x = ae86.position.x * ae86.scale.x - 14.5f;
+
+            camera.position.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;
+        }
         
-        if (ae86.position.x <= -2) {
-            ae86.position.x = -2;
-        }
-        else {
-            camera.position.x <= CAR_MOVEMENT_SPEED * ae86.scale.x;
-        }
+
+        // cout <<"X:" << ae86.position.x <<"Y:" << ae86.position.y <<"Z:" << ae86.position.z <<endl;
+
+
+        wasMoving = true;
     }
 
     if (moveRight) {
-        ae86.position.x += CAR_MOVEMENT_SPEED;
-        smokeBasePosition.x += CAR_MOVEMENT_SPEED * ae86.scale.x;    
-        
-        if (ae86.position.x >= 2) {
-            ae86.position.x = 2;
+        // float newX = ae86.position.x + CAR_MOVEMENT_SPEED *10;
+
+
+        if (ae86.position.x >= CAR_MAX_X) {
+            //ae86.position.x = CAR_MAX_X;
+            smokeBasePosition.x = CAR_MAX_X * ae86.scale.x - 14.5f;
+        } else {
+            //ae86.position.x = newX;
+            // smokeBasePosition.x += CAR_MOVEMENT_SPEED * ae86.scale.x;
+
+            smokeBasePosition.x = ae86.position.x * ae86.scale.x - 14.5f;
+
+            camera.position.x += CAR_MOVEMENT_SPEED * ae86.scale.x;
         }
-        else {
-        camera.position.x >= CAR_MOVEMENT_SPEED * ae86.scale.x;
-        }
+
+
+        // cout <<"X:" << ae86.position.x <<"Y:" << ae86.position.y <<"Z:" << ae86.position.z <<endl;
+
+
+        wasMoving = true;
     }
 
+    checkCarCollision();
 
-    checkCarCollision(); 
+    // Update the smoke generation logic in the render function:
+    if (wasMoving && moveForward) {
+        makeParticles(smokeBasePosition, glm::normalize(glm::vec3(1, 0, 1)), glm::vec3(0, 1, 0));
+    }
 }
 
 
@@ -608,23 +669,15 @@ void update(){
     rockModel = glm::translate(rockModel, rock.position);
 
 
-    // camera.rotationY = (camera.rotationY > 360.0) ? 0.0 : camera.rotationY;
-    // cameraModel = glm::mat4(1.0f);
-    // cameraModel = glm::rotate(cameraModel, glm::radians(camera.rotationY), camera.up);
-    // cameraModel = glm::translate(cameraModel, camera.position);
-
-    // udpate
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));  // Delay of 10 ms
-
     carMovementLogic(); 
-    //updateCameraPosition();
+    updateCameraBasedOnView();
     camera.rotationY = (camera.rotationY > 360.0) ? 0.0 : camera.rotationY;
     cameraModel = glm::mat4(1.0f);
     cameraModel = glm::rotate(cameraModel, glm::radians(camera.rotationY), camera.up);
     cameraModel = glm::translate(cameraModel, camera.position);
-    //float currentTime = glfwGetTime(); // Get current time
-    if(moveForward)
-        makeParticles(smokeBasePosition, glm::normalize(glm::vec3(1, 0, 1)), glm::vec3(0, 1, 0));
+
+    // if(moveForward)
+        // makeParticles(smokeBasePosition, glm::normalize(glm::vec3(1, 0, 1)), glm::vec3(0, 1, 0));
 
 
 	for (int i = 0; i < particles.size(); ++i) {
@@ -663,13 +716,15 @@ void renderSurface(shader_program_t* shader) {
 // Render palms along the road
 void renderPalms(shader_program_t* shader) {
     float spacing = 100.0f;
-    int numPalms = 10;
+    //int numPalms = 10;
     float roadOffset = 130.0f;
+    float start = ae86.position.z - (int(ae86.position.z) % 100);
+    //float start = -29.0f;
 
-    for (int i = 0; i < numPalms; i++) {
+    for (int z = start; z < start+1000; z+=100) {
         // Left side
         palmModel = glm::mat4(1.0f);
-        palmModel = glm::translate(palmModel, glm::vec3(-roadOffset, -13.0f, -300.0f + i * spacing));
+        palmModel = glm::translate(palmModel, glm::vec3(-roadOffset, -13.0f, -z));
         palmModel = glm::scale(palmModel, palm.scale);
         palmModel = glm::rotate(palmModel, glm::radians(-90.0f), palm.rotation);
         shader->set_uniform_value("model", palmModel);
@@ -681,7 +736,7 @@ void renderPalms(shader_program_t* shader) {
 
         // Right side
         palmModel = glm::mat4(1.0f);
-        palmModel = glm::translate(palmModel, glm::vec3(roadOffset, -13.0f, -300.0f + i * spacing));
+        palmModel = glm::translate(palmModel, glm::vec3(roadOffset, -13.0f, -z));
         palmModel = glm::scale(palmModel, palm.scale);
         palmModel = glm::rotate(palmModel, glm::radians(-90.0f), palm.rotation);
         shader->set_uniform_value("model", palmModel);
@@ -717,6 +772,46 @@ void renderRock(shader_program_t* shader) {
     rock.object->render();
 }
 
+void updateCameraBasedOnView() {
+  glm::vec3 carPosition = glm::vec3(
+    ae86.position.x * ae86.scale.x,
+    ae86.position.y * ae86.scale.y,
+    ae86.position.z * ae86.scale.z
+  );
+
+  switch(currentView) {
+    case BACK_VIEW:
+      // Position camera behind the car
+      camera.position = glm::vec3(
+        carPosition.x,
+        carPosition.y + 20.0f,
+        carPosition.z + 200.0f
+      );
+      camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
+      break;
+
+    case FRONT_VIEW:
+      // Position camera in front of the car
+      camera.position = glm::vec3(
+        carPosition.x,
+        carPosition.y + 20.0f,
+        carPosition.z - 200.0f
+      );
+      camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
+      break;
+
+    case TOP_VIEW:
+      // Position camera above the car
+      camera.position = glm::vec3(
+        carPosition.x,
+        carPosition.y + 300.0f,
+        carPosition.z
+      );
+      camera.up = glm::vec3(0.0f, 0.0f, -1.0f);
+      break;
+  }
+}
+
 
 void render(){
 
@@ -724,7 +819,19 @@ void render(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Calculate view, projection matrix
-    glm::mat4 view = glm::lookAt(glm::vec3(cameraModel[3]), glm::vec3(ae86.position), camera.up);
+    //glm::mat4 view = glm::lookAt(glm::vec3(cameraModel[3]), ae86.position), camera.up);
+    glm::vec3 carPosition = glm::vec3(
+      ae86.position.x * ae86.scale.x,
+      ae86.position.y * ae86.scale.y,
+      ae86.position.z * ae86.scale.z
+    );
+    
+    glm::mat4 view = glm::lookAt(
+      glm::vec3(cameraModel[3]),           // Camera position
+      carPosition,              // Look at car position
+      camera.up                 // Up vector
+    );
+
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
 
     // Set matrix for view, projection, model transformation
@@ -840,114 +947,65 @@ int main() {
 
 
 
-// Add key callback
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-
-    // The action is one of GLFW_PRESS, GLFW_REPEAT or GLFW_RELEASE.
-    // Events with GLFW_PRESS and GLFW_RELEASE actions are emitted for every key press.
-    // Most keys will also emit events with GLFW_REPEAT actions while a key is held down.
-    // https://www.glfw.org/docs/3.3/input_guide.html
-
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    // shader program selection
-    if (key == GLFW_KEY_0 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
-        shaderProgramIndex = 0;
-    if (key == GLFW_KEY_1 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
-        shaderProgramIndex = 1;
-    if (key == GLFW_KEY_2 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
-        shaderProgramIndex = 2;
-    if (key == GLFW_KEY_3 && (action == GLFW_REPEAT || action == GLFW_PRESS))
-        shaderProgramIndex = 3;
-    if (key == GLFW_KEY_4 && (action == GLFW_REPEAT || action == GLFW_PRESS))
-        shaderProgramIndex = 4;
-    if (key == GLFW_KEY_5 && (action == GLFW_REPEAT || action == GLFW_PRESS))
-        shaderProgramIndex = 5;
-
+    // Camera view controls
     if (action == GLFW_PRESS) {
+        if (key == GLFW_KEY_1) {
+           currentView = BACK_VIEW;
+        }
+        if (key == GLFW_KEY_2) {
+          currentView = FRONT_VIEW;
+        }
+        if (key == GLFW_KEY_3) {
+          currentView = TOP_VIEW;
+        }
+        
+        // Existing movement controls
         if (key == GLFW_KEY_W) moveForward = true;
         if (key == GLFW_KEY_S) moveBackward = true;
         if (key == GLFW_KEY_A) moveLeft = true;
         if (key == GLFW_KEY_D) moveRight = true;
-        if (key == GLFW_KEY_LEFT) moveCameraLeft = true;
-        if(key == GLFW_KEY_RIGHT) moveCameraRight = true;
+
     } else if (action == GLFW_RELEASE) {
         if (key == GLFW_KEY_W) moveForward = false;
         if (key == GLFW_KEY_S) moveBackward = false;
         if (key == GLFW_KEY_A) moveLeft = false;
         if (key == GLFW_KEY_D) moveRight = false;
-        if (key == GLFW_KEY_LEFT) moveCameraLeft = false;
-        if(key == GLFW_KEY_RIGHT) moveCameraRight =false;
+
     }
 
-    // float carSpeed = 1.0f; 
 
-    // if (moveForward) {
-    //     ae86.position.z -= carSpeed;
-    //     if(ae86.position.z < -29){
-    //         ae86.position.z = 29;
-    //         // add score 
-    //         score += 100;
-    //         lap++; 
-    //         std::cout << "Lap:" << lap << " Score:" << score << std::endl; 
+    if (moveLeft) {
+        float newX = ae86.position.x - CAR_MOVEMENT_SPEED * 20;
 
-    //         // change the rock position 
-    //         int choice = rand()%3;
-    //         if(choice == 0){
-    //             rock.position.x = -130;
-    //         }else if(choice == 1){
-    //             rock.position.x = 0;
-    //         }else if(choice == 2){
-    //             rock.position.x = 130;
-    //         }
+        if (newX <= CAR_MIN_X) {
+            ae86.position.x = CAR_MIN_X;
+            // smokeBasePosition.x = CAR_MIN_X * ae86.scale.x - 14.5f;
+        } else {
+            ae86.position.x = newX;
+            // smokeBasePosition.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;
+            // camera.position.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;
+        }
 
-    //     }
-    // }
+    }
 
-    // if (moveBackward) {
-    //     ae86.position.z += carSpeed;
-    //     if(ae86.position.z > 29){
-    //         ae86.position.z = 29;
-    //     }
-    // }
-    
-    // // there is only two lanes in the road -2, 0, 2
-    // if (moveLeft) {
-    //     ae86.position.x -= carSpeed*2;
-    //     if(ae86.position.x < -2){
-    //         ae86.position.x = -2;
-    //     } 
-    // }
+    if (moveRight) {
+        float newX = ae86.position.x + CAR_MOVEMENT_SPEED *20;
 
-    // // there is only two lanes in the road -2, 0, 2
-    // if (moveRight) {
-    //     ae86.position.x += carSpeed*2;
-    //     if(ae86.position.x > 2){
-    //         ae86.position.x = 2;
-    //     }
-    // }
-
-    // if (moveCameraLeft) {
-    //     camera.rotationY -= 10.0;
-    // }
-
-    // if (moveCameraRight) {
-    //     camera.rotationY += 10.0;  
-    // }
-    
-    // // check if the user hit the rock
-    // if(ae86.position.x*65 == rock.position.x && ae86.position.z-2 == rock.position.z && (moveForward||moveBackward)){
-    //     if(score>200){
-    //         score -= 200;
-    //     }else{
-    //         score = 0;
-    //     }
-    //     std::cout << "You hit the rock! " << " Score:" << score << std::endl; 
-    // }
+        if (newX >= CAR_MAX_X) {
+            ae86.position.x = CAR_MAX_X;
+            // smokeBasePosition.x = CAR_MAX_X * ae86.scale.x - 14.5f;
+        } else {
+            ae86.position.x = newX;
+            // smokeBasePosition.x += CAR_MOVEMENT_SPEED * ae86.scale.x;
+            // camera.position.x += CAR_MOVEMENT_SPEED * ae86.scale.x;
+        }
+    }
 
 }
-
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
