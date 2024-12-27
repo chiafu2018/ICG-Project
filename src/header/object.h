@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>
 #include <string.h>
 
+
+
 using namespace std;
 
 enum class FACETYPE {
@@ -25,6 +27,7 @@ public:
         vector<glm::vec3> tmp_vertices;
         vector<glm::vec3> tmp_normals;
         vector<glm::vec2> tmp_texcoords;
+        
 
         regex wTexture_3(" [0-9]+/[0-9]+/[0-9]+ [0-9]+/[0-9]+/[0-9]+ [0-9]+/[0-9]+/[0-9]+ *\n");
         regex woTexture_3(" [0-9]+//[0-9]+ [0-9]+//[0-9]+ [0-9]+//[0-9]+ *\n");
@@ -107,6 +110,21 @@ public:
                     normalIndices.push_back(normalIndex[2]);
                     normalIndices.push_back(normalIndex[3]);
                     normalIndices.push_back(normalIndex[0]);
+
+                    // vertex 0, 1, 2, 3 map to currentmaterial 
+                    if(vertexColor.find(vertexIndex[0]) == vertexColor.end()){
+                        vertexColor[vertexIndex[0]] = current_color;    
+                    }
+                    if(vertexColor.find(vertexIndex[1]) == vertexColor.end()){
+                        vertexColor[vertexIndex[1]] = current_color;    
+                    }
+                    if(vertexColor.find(vertexIndex[2]) == vertexColor.end()){
+                        vertexColor[vertexIndex[2]] = current_color;    
+                    }
+                    if(vertexColor.find(vertexIndex[3]) == vertexColor.end()){
+                        vertexColor[vertexIndex[3]] = current_color;    
+                    }
+
                 } else {
                     vertexIndices.push_back(vertexIndex[0]);
                     vertexIndices.push_back(vertexIndex[1]);
@@ -117,10 +135,25 @@ public:
                     normalIndices.push_back(normalIndex[0]);
                     normalIndices.push_back(normalIndex[1]);
                     normalIndices.push_back(normalIndex[2]);
+
+                    // vertex 0, 1, 2 map to currentmaterial 
+                    if(vertexColor.find(vertexIndex[0]) == vertexColor.end()){
+                        vertexColor[vertexIndex[0]] = current_color;    
+                    }
+                    if(vertexColor.find(vertexIndex[1]) == vertexColor.end()){
+                        vertexColor[vertexIndex[1]] = current_color;    
+                    }
+                    if(vertexColor.find(vertexIndex[2]) == vertexColor.end()){
+                        vertexColor[vertexIndex[2]] = current_color;    
+                    }
                 }
-            } else {
+
+            } else if(strcmp(lineHead, "usemtl") == 0) {
+                current_color+=1.0;
             }
         }
+
+
 
         // file read ends
         for (unsigned int i = 0; i < vertexIndices.size(); i++) {
@@ -129,6 +162,10 @@ public:
             positions.push_back(vertex.x);
             positions.push_back(vertex.y);
             positions.push_back(vertex.z);
+
+            // push the correspond color for each vertex
+            colors.push_back(vertexColor[vertexIndex]);
+            
             vertexIndex = uvIndices[i];
 
             if (vertexIndex != -1) {
@@ -149,16 +186,22 @@ public:
 
     };
     void load_to_buffer();
-    void load_texture(const string& filepath);
+    void load_texture(const std::string &filepath);
     void render();
     
+    float current_color = -1.0;
+
 private:
     FACETYPE faceType = FACETYPE::TRIANGLE;
     vector<float> positions;
     vector<float> normals;
     vector<float> texcoords;
+    vector<float> colors; 
+
+    map<unsigned int, float> vertexColor; 
+
     unsigned int texture;
     unsigned int VAO; 
-    unsigned int VBO[3];
+    unsigned int VBO[4];
     int numFace = 0;
 };

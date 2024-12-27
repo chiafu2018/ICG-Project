@@ -1,6 +1,9 @@
 #include "header/object.h"
 #include <glad/glad.h>
 #include "header/stb_image.h"
+#include <map>
+
+std::map<std::string, unsigned int> textureMap; // Map texture path to OpenGL texture ID
 
 void Object::load_texture(const std::string &filepath){
     glEnable(GL_TEXTURE_2D);
@@ -22,10 +25,11 @@ void Object::load_texture(const std::string &filepath){
     stbi_image_free(data);
 }
 
+
 void Object::load_to_buffer(){
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-    glGenBuffers(3, VBO);
+    glGenBuffers(4, VBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT) * (positions.size()), &(positions[0]), GL_STATIC_DRAW);
@@ -43,6 +47,13 @@ void Object::load_to_buffer(){
     glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT) * (texcoords.size()), &(texcoords[0]), GL_STATIC_DRAW);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 2, 0);
     glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // each vertex has its own color define by stage
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[3]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT) * (colors.size()), &(colors[0]), GL_STATIC_DRAW);
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 1, 0);
+    glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
