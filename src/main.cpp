@@ -8,8 +8,9 @@
 #include "header/cube.h"
 #include "header/object.h"
 #include "header/shader.h"
-//#include "header/particle.h"
 #include "header/stb_image.h"
+
+using namespace std; 
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -74,14 +75,13 @@ model_t rock;
 // model matrix
 int moveDir = -1;
 glm::mat4 cameraModel;
-
 glm::mat4 ae86Model;
 glm::mat4 surfaceModel;
 glm::mat4 palmModel;
 glm::mat4 rockModel;
 
 // scores 
-unsigned int score = 0, lap= 0;
+unsigned int score = 0, lap = 0;
 
 // this variable is used to test whether this current lap has hit the rock or not. every lap will only minus point one time
 unsigned int lapHitRock = -1; 
@@ -96,30 +96,19 @@ CameraView currentView = BACK_VIEW;
 
 bool moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
 
-
-const float CAMERA_FOLLOW_DISTANCE = 200.0f; // Distance behind the car
-const float CAMERA_HEIGHT = 20.0f;          // Height above the car
-const float CAMERA_SMOOTHING = 0.1f;        // Lower = smoother camera movement
+const float CAMERA_FOLLOW_DISTANCE = 200.0f;    // Distance behind the car
+const float CAMERA_HEIGHT = 20.0f;              // Height above the car
+const float CAMERA_SMOOTHING = 0.1f;            // Lower = smoother camera movement
 const float CAR_MOVEMENT_SPEED = 0.1f;
-// const float CAR_MOVEMENT_SPEED = 1.0f;
 
-// const float CAR_MIN_Z = -20.0f; // car minimum for generating the smoke 
-// const float CAR_MAX_Z = 675.0f;
-const float CAR_MIN_Z = -30.0f; // car minimum for generating the smoke 
-// const float CAR_MAX_Z = 29.0f;
+const float CAR_MIN_Z = -30.0f;  
 const float CAR_MAX_Z = 0.0f;
-
-// const float CAR_MIN_X = -180.0f;
-// const float CAR_MAX_X = 180.0f;
-
 const float CAR_MIN_X = -2.0f;
 const float CAR_MAX_X = 2.0f;
 
-
 glm::vec3 smokeBasePosition; 
 
-
-//// Particles 
+// Particles 
 struct ParticleCreateInfo {
 	glm::vec3 position, velocity, acceleration, up_vector, side_vector;
 	float lifetime;
@@ -157,76 +146,6 @@ Particle::Particle(ParticleCreateInfo* createInfo) {
 	initialHeight = position.y;
 
 }
-
-
-
-// // At global scope
-// static std::default_random_engine generator(std::chrono::steady_clock::now().time_since_epoch().count());
-
-// float random() {
-//    return float(generator() % 1000) / 1000;
-//   //cout<< a <<endl;
-//   //return a;
-// }
-// // float random() {
-// //     unsigned seed = std::chrono::steady_clock::now().time_since_epoch().count();
-// //     std::default_random_engine generator(seed);
-// //     return float(generator() % 1000) / 1000;
-// // }
-
-// // At global scope
-// // static std::default_random_engine generator(std::chrono::steady_clock::now().time_since_epoch().count());
-// // std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-
-// // float random() {
-// //     float a = distribution(generator);
-// //     cout<< a <<endl;
-// //     return a;
-// // }
-
-// void Particle::update(float rate) {
-// 	t += rate;
-//   float ageFactor = t / lifetime; 
-//  // float velocityScale = glm::mix(1.0f, 0.98f, ageFactor); // Interpolate between 1.0 and 0.8
-//   float spreadFactor = glm::mix(1.0f, 1.1f, ageFactor); // Increase spread as ageFactor grows
-//   //velocity.x *= spreadFactor;
-//   //velocity.y *= spreadFactor;
-//   //velocity *= velocityScale;
-//   //find the min velocity 
-// 	//velocity += rate * acceleration;
-
-
-// 	//float y = float(generator() % 1000)/10000;
-//   float y = glm::mix((random() + 0.2f)* 0.1f, random() * 0.01f, ageFactor);
-//   up_vector.y = y;
-  
-// 	//float x = float(generator() % 10)/10000;
-//   float x = glm::mix((random() - 0.5f)* 0.01f, (random() - 0.5f)* 0.01f, ageFactor);
-//   side_vector.x = x;
-//   // cout<<"lifetime "<<endl;
-//   // cout<<" x " << x << " y "<<y<<endl;
-//   velocity += up_vector + side_vector; 
-// 	position += rate * velocity;
-// 	// if (position.z < 0) {
-// 	// 	velocity.z *= -0.5f
-// 	// 	position.z = 0.0f;
-// 	// }
-
-// 	modelTransform = glm::mat4(1.0f);
-//   //cout<<position.x<<" "<< position.y<<" "<<position.z<<" "<<endl;
-// 	modelTransform = glm::translate(modelTransform, position);
-
-
-//   float heightDiff = position.y - initialHeight;
-//   float heightFactor = glm::clamp(heightDiff / MAX_HEIGHT_DIFFERENCE, 0.0f, 1.0f);
- 
-//   glm::vec3 lightColor = glm::vec3(0.9f, 0.9f, 0.9f);
-//   //glm::vec3 fadeColor = color + (glm::vec3(1.0f) - color) * ageFactor;
-//   glm::vec3 heightBlendedColor = glm::mix(color, lightColor, ageFactor);
-//   ageFactor *= 1.25;
-// 	tint = glm::vec4(heightBlendedColor, 1.0f - ageFactor);
-
-// }
 
 // At global scope, use thread_local to ensure thread safety and better randomization
 thread_local static std::random_device rd;
@@ -273,7 +192,6 @@ void Particle::update(float rate) {
 std::vector<Particle*> particles;
 
 
-
 //////////////////////////////////////////////////////////////////////////
 // Parameter setup, 
 // You can change any of the settings if you want
@@ -281,10 +199,7 @@ std::vector<Particle*> particles;
 void camera_setup(){
     camera.position = glm::vec3(0.0, 20.0, 200.0);
     camera.up = glm::vec3(0.0, 1.0, 0.0);
-    // set the camera angle to see the car from starting line
-    // camera.rotationY = 210;
     camera.rotationY = 0;
-
 }
 
 void light_setup(){
@@ -301,17 +216,7 @@ void material_setup(){
     material.gloss = 10.5;
 }
 
-// void particle_setup(){
-//     exhaustSmoke = new ParticleSystem(500);
-//   for(int i = 0; i < 4; i++) {
-//       wheelSmoke.push_back(new ParticleSystem(200));
-// }
-// }
 //////////////////////////////////////////////////////////////////////////
-
-// void model_setup(){
-
-// // Load the object and texture for each model here 
 
 void model_setup(){
 
@@ -328,16 +233,16 @@ void model_setup(){
     surfaceModel = glm::mat4(1.0f);
     palmModel = glm::mat4(1.0f);
     rockModel = glm::mat4(1.0f);
-    // starting line is at 0, 0, 29
-    // ae86.position = glm::vec3(0.0f, 0.0f, 29.0f);
-    ae86.position = glm::vec3(0.0f, 0.0f, 0.0f);
 
+    // Load car model 
+    ae86.position = glm::vec3(0.0f, 0.0f, 0.0f);
+    ae86.scale = glm::vec3(30.0f, 30.0f, 30.0f);
     ae86.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     ae86.object = new Object(objDir + "ae86.obj");
 
-    ae86.scale = glm::vec3(30.0f, 30.0f, 30.0f);
     ae86.object->load_to_buffer();
 
+    // Load road model 
     surface.position = glm::vec3(0.0f, -13.0f, 0.0f);  // Position below the car
     surface.scale = glm::vec3(50.0f, 1.0f, 700.0f);  // Large plane surface
     surface.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -357,6 +262,7 @@ void model_setup(){
 
     smokeBasePosition = glm::vec3(-14.5f + ae86.position.x, -6.8f + ae86.position.y, 70.0f + ae86.position.z);
 
+    // Load rock model 
     rock.position = glm::vec3(0.0f, 20.0f, -(rand()%5000 + 3000)); 
     rock.scale = glm::vec3(0.5f, 0.5f, 0.1f); 
     rock.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -378,10 +284,9 @@ void shader_setup(){
     std::string shaderDir = "..\\..\\src\\shaders\\";
 #endif
 
+    // gernerate items: car, road, palm trees
     std::vector<std::string> shadingMethod = {
-        "default",                              // default shading
-        // "bling-phong", "gouraud", "metallic",   // addional shading effects (basic)
-        // "glass_schlick", "glass_empricial",     // addional shading effects (advanced)
+        "default"                              // default shading
     };
 
     for(int i=0; i<shadingMethod.size(); i++){
@@ -401,13 +306,11 @@ void shader_setup(){
 }
 
 void particleSetup(){
-    // std::string particleDir = "..\\..\\src\\asset\\texture\\smoke.jpg";
     std::string shaderDir = "..\\..\\src\\shaders\\";
 
     std::string vpath = shaderDir + "particle.vert";
     std::string gpath = shaderDir + "particle.geom";
     std::string fpath = shaderDir + "particle.frag";
-    // particleTexture = loadParticle(particleDir);
     
     particleShader = new shader_program_t();
     particleShader->create();
@@ -415,7 +318,6 @@ void particleSetup(){
     particleShader->add_shader(gpath, GL_GEOMETRY_SHADER);
     particleShader->add_shader(fpath, GL_FRAGMENT_SHADER);
     particleShader->link_shader();
-
 }
 
 
@@ -541,7 +443,6 @@ void gameLogic(){
 
 void checkCarCollision(){
     // check if the user hit the rock
-
     float disBetweenCarRock = abs(rock.position.z*rock.scale.z - ae86.position.z*ae86.scale.z); 
 
     if(lap != lapHitRock){
@@ -557,10 +458,7 @@ void checkCarCollision(){
         }
 
     }
-
-
 }
-
 
 void carMovementLogic() {
     bool wasMoving = false;  // Track if the car was actually moving
@@ -594,50 +492,23 @@ void carMovementLogic() {
     }
 
 
-
     if (moveLeft) {
-        // float newX = ae86.position.x - CAR_MOVEMENT_SPEED * 10;
-
-
         if (ae86.position.x <= CAR_MIN_X) {
-            // ae86.position.x = CAR_MIN_X;
             smokeBasePosition.x = CAR_MIN_X * ae86.scale.x - 14.5f;
         } else {
-            // ae86.position.x = newX;
-            // smokeBasePosition.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;
-
             smokeBasePosition.x = ae86.position.x * ae86.scale.x - 14.5f;
-
             camera.position.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;
         }
-        
-
-        // cout <<"X:" << ae86.position.x <<"Y:" << ae86.position.y <<"Z:" << ae86.position.z <<endl;
-
-
         wasMoving = true;
     }
 
     if (moveRight) {
-        // float newX = ae86.position.x + CAR_MOVEMENT_SPEED *10;
-
-
         if (ae86.position.x >= CAR_MAX_X) {
-            //ae86.position.x = CAR_MAX_X;
             smokeBasePosition.x = CAR_MAX_X * ae86.scale.x - 14.5f;
         } else {
-            //ae86.position.x = newX;
-            // smokeBasePosition.x += CAR_MOVEMENT_SPEED * ae86.scale.x;
-
             smokeBasePosition.x = ae86.position.x * ae86.scale.x - 14.5f;
-
             camera.position.x += CAR_MOVEMENT_SPEED * ae86.scale.x;
         }
-
-
-        // cout <<"X:" << ae86.position.x <<"Y:" << ae86.position.y <<"Z:" << ae86.position.z <<endl;
-
-
         wasMoving = true;
     }
 
@@ -648,10 +519,6 @@ void carMovementLogic() {
         makeParticles(smokeBasePosition, glm::normalize(glm::vec3(1, 0, 1)), glm::vec3(0, 1, 0));
     }
 }
-
-
-
-
 
 void update(){
 
@@ -665,7 +532,6 @@ void update(){
 
     rockModel = glm::mat4(1.0f);
     rockModel = glm::scale(rockModel, rock.scale);
-    //randomly generate the rock position later 
     rockModel = glm::translate(rockModel, rock.position);
 
 
@@ -679,9 +545,7 @@ void update(){
     // if(moveForward)
         // makeParticles(smokeBasePosition, glm::normalize(glm::vec3(1, 0, 1)), glm::vec3(0, 1, 0));
 
-
 	for (int i = 0; i < particles.size(); ++i) {
-
 		Particle* particle = particles[i];
 		particle->update(1.0f);
 
@@ -689,37 +553,28 @@ void update(){
 			delete particle;
 			particles.erase(particles.begin() + i--);
 		}
-
 	}
 }
 
 // Render AE86 car
 void renderAE86(shader_program_t* shader) {
     shader->set_uniform_value("model", ae86Model);
-
-    // apply neon effect
     shader->set_uniform_value("useNeonEffect", false);
-
     ae86.object->render();
 }
 
 // Render the surface (plane)
 void renderSurface(shader_program_t* shader) {
     shader->set_uniform_value("model", surfaceModel);
-
-    // apply neon effect
     shader->set_uniform_value("useNeonEffect", true);
-
     surface.object->render();
 }
 
 // Render palms along the road
 void renderPalms(shader_program_t* shader) {
     float spacing = 100.0f;
-    //int numPalms = 10;
     float roadOffset = 130.0f;
     float start = ae86.position.z - (int(ae86.position.z) % 100);
-    //float start = -29.0f;
 
     for (int z = start; z < start+1000; z+=100) {
         // Left side
@@ -728,8 +583,6 @@ void renderPalms(shader_program_t* shader) {
         palmModel = glm::scale(palmModel, palm.scale);
         palmModel = glm::rotate(palmModel, glm::radians(-90.0f), palm.rotation);
         shader->set_uniform_value("model", palmModel);
-
-        // apply neon effect
         shader->set_uniform_value("useNeonEffect", true);
 
         palm.object->render();
@@ -740,8 +593,6 @@ void renderPalms(shader_program_t* shader) {
         palmModel = glm::scale(palmModel, palm.scale);
         palmModel = glm::rotate(palmModel, glm::radians(-90.0f), palm.rotation);
         shader->set_uniform_value("model", palmModel);
-
-        // apply neon effect
         shader->set_uniform_value("useNeonEffect", true);
 
         palm.object->render();
@@ -765,10 +616,7 @@ void renderSkybox(const glm::mat4& view, const glm::mat4& projection) {
 // Render the surface (plane)
 void renderRock(shader_program_t* shader) {
     shader->set_uniform_value("model", rockModel);
-
-    // apply neon effect
     shader->set_uniform_value("useNeonEffect", false);
-
     rock.object->render();
 }
 
@@ -819,7 +667,6 @@ void render(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Calculate view, projection matrix
-    //glm::mat4 view = glm::lookAt(glm::vec3(cameraModel[3]), ae86.position), camera.up);
     glm::vec3 carPosition = glm::vec3(
       ae86.position.x * ae86.scale.x,
       ae86.position.y * ae86.scale.y,
@@ -827,9 +674,9 @@ void render(){
     );
     
     glm::mat4 view = glm::lookAt(
-      glm::vec3(cameraModel[3]),           // Camera position
-      carPosition,              // Look at car position
-      camera.up                 // Up vector
+      glm::vec3(cameraModel[3]),    // Camera position
+      carPosition,                  // Look at car position
+      camera.up                     // Up vector
     );
 
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
@@ -838,25 +685,6 @@ void render(){
     shaderPrograms[shaderProgramIndex]->use();
     shaderPrograms[shaderProgramIndex]->set_uniform_value("view", view);
     shaderPrograms[shaderProgramIndex]->set_uniform_value("projection", projection);
-    
-
-    if(shaderProgramIndex == 1 || shaderProgramIndex == 2){
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("material_ambient", material.ambient);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("material_diffuse", material.diffuse);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("material_specular", material.specular);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("material_gloss", material.gloss);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("light_ambient", light.ambient);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("light_diffuse", light.diffuse);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("light_specular", light.specular);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("light_position", light.position);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("camera_position", cameraModel[3]);
-    }else if(shaderProgramIndex == 3 || shaderProgramIndex == 4 || shaderProgramIndex == 5){
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("light_position", light.position);
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("camera_position", cameraModel[3]);
-    }
-
-    // shaderPrograms[shaderProgramIndex]->set_uniform_value("time", float(glfwGetTime()));
-
 
     renderAE86(shaderPrograms[shaderProgramIndex]);
     renderSurface(shaderPrograms[shaderProgramIndex]);
@@ -864,8 +692,7 @@ void render(){
     renderRock(shaderPrograms[shaderProgramIndex]);
     renderSkybox(view, projection);
 
-
-    // // Enable blending
+    // Enable blending
     glEnable(GL_BLEND);
     glDepthMask(GL_FALSE);
   
@@ -880,20 +707,16 @@ void render(){
         particleShader->set_uniform_value("projection", projection);
         particleShader->set_uniform_value("tint", particle->tint.a);
         particleShader->set_uniform_value("my_color", glm::vec3(particle->tint.r, particle->tint.g, particle->tint.b)); 
-      // glActiveTexture(GL_TEXTURE0);
-       //glBindTexture(GL_TEXTURE_2D, particleTexture);
-       //particleShader->set_uniform_value("particleTexture", 0);
+        // glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_2D, particleTexture);
+        //particleShader->set_uniform_value("particleTexture", 0);
         glDrawArrays(GL_POINTS, 0, 1);
-      //glBindTexture(GL_TEXTURE_2D, 0);
-     // glBindVertexArray(0);
+        //glBindTexture(GL_TEXTURE_2D, 0);
+        // glBindVertexArray(0);
     }
     glDisable(GL_BLEND);
     glDepthMask(GL_TRUE);
-
-
 }
-
-
 
 
 int main() {
@@ -932,20 +755,40 @@ int main() {
 
     // Setup texture, model, shader ...e.t.c
     setup();
-    
+
+    cout << "Game Start!" << endl; 
+
+    // set up the clock 
+    float beginTime = glfwGetTime();
+
     // Render loop, main logic can be found in update, render function
     while (!glfwWindowShouldClose(window)) {
         update(); 
         render(); 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        if(score >= 1000){
+            break; 
+        }
+    }
+
+    // set up the clock 
+    float duration = glfwGetTime() - beginTime;
+
+    if(glfwWindowShouldClose(window)){
+        cout << "You Lose! Jeff was caught by police" << endl; 
+    }else{
+        if(duration > 100.0f){
+            cout << "You Lose! Jeff was caught by police" << endl; 
+        }else{
+            cout << "You Win! Jeff escaped successfully" << endl; 
+        }
     }
 
     glfwTerminate();
     return 0;
 }
-
-
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -977,35 +820,24 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 
     }
 
-
+    // this part will make sure that the key press only trigger this function once
     if (moveLeft) {
         float newX = ae86.position.x - CAR_MOVEMENT_SPEED * 20;
-
-        if (newX <= CAR_MIN_X) {
+        if (newX <= CAR_MIN_X) 
             ae86.position.x = CAR_MIN_X;
-            // smokeBasePosition.x = CAR_MIN_X * ae86.scale.x - 14.5f;
-        } else {
+        else 
             ae86.position.x = newX;
-            // smokeBasePosition.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;
-            // camera.position.x -= CAR_MOVEMENT_SPEED * ae86.scale.x;
-        }
-
     }
 
     if (moveRight) {
         float newX = ae86.position.x + CAR_MOVEMENT_SPEED *20;
-
-        if (newX >= CAR_MAX_X) {
+        if (newX >= CAR_MAX_X) 
             ae86.position.x = CAR_MAX_X;
-            // smokeBasePosition.x = CAR_MAX_X * ae86.scale.x - 14.5f;
-        } else {
+        else
             ae86.position.x = newX;
-            // smokeBasePosition.x += CAR_MOVEMENT_SPEED * ae86.scale.x;
-            // camera.position.x += CAR_MOVEMENT_SPEED * ae86.scale.x;
-        }
     }
-
 }
+
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
@@ -1050,37 +882,6 @@ unsigned int loadCubemap(vector<std::string>& faces){
 
 
 unsigned int loadParticle(const std::string &filepath) {
-    // unsigned int texture;
-    // glGenTextures(1, &texture);
-    // glBindTexture(GL_TEXTURE_2D, texture);
-    
-    // //Set texture parameters
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // int width, height, nrChannels;
-    // stbi_set_flip_vertically_on_load(true);
-    // unsigned char *data = stbi_load(filepath.c_str(), &width, &height, &nrChannels, 0); // Force load with alpha
-
-    // if (data) {
-    //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    //     std::cout << "Texture loaded successfully. Size: " << width << "x" << height << " Channels: " << nrChannels << std::endl;
-    // } else {
-    //     std::cout << "Failed to load texture at path: " << filepath << std::endl;
-    // }
-
-    // // glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-    // // glTextureStorage2D(texture, 1, GL_RGBA8, width, height);
-    // // glTextureSubImage2D(texture, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    // // glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    // // glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // // glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    // // glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    // stbi_image_free(data);
-    // return texture;
     unsigned int texture;
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &texture);

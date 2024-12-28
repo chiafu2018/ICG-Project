@@ -10,6 +10,7 @@ in VS_OUT {
 out vec2 TexCoord; 
 out vec4 outColor;
 
+// this is just a simple geomtry shader
 
 void main() {    
 

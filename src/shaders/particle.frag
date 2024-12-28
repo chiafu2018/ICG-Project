@@ -12,12 +12,11 @@ void main()
 
     // Create a simple circular particle
     //vec2 center = vec2(0.5, 0.5);
-   // float dist = length(fragmentTexCoord - center);
+    // float dist = length(fragmentTexCoord - center);
     //float alpha = smoothstep(0.5, 0.4, dist);
     
-   // FragColor = fColor;
-   // FragColor.a *= alpha;
+    // FragColor = fColor;
+    // FragColor.a *= alpha;
 
     FragColor = vec4(my_color, tint);
-
 }

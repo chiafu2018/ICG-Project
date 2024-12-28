@@ -15,10 +15,9 @@ void main()
     // gl_In = struct { gl_Position, gl_PointSize, gl_ClipDistance };
 
     float dynamicSize = mix(size, 0.6, 1-tint);
-        // Exponential scaling for finer size reduction
-    //float dynamicSize = size * pow(0.5, tint);
-    
 
+    // Exponential scaling for finer size reduction
+    //float dynamicSize = size * pow(0.5, tint);
 
     //bottom left
     gl_Position = projection * (vec4(-dynamicSize, -dynamicSize, 0.0, 0.0) + gl_in[0].gl_Position);

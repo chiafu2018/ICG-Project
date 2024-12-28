@@ -19,19 +19,15 @@ void main() {
 
     if(useNeonEffect){
         // Stronger neon intensity
-        float neonIntensity = 4.0; // Adjust this value for a stronger glow
+        float neonIntensity = 4.0; 
 
-        // Amplify the RGB channels
         vec3 glow = texColor.rgb * neonIntensity;
-
-        // Clamp to avoid over-saturation or invalid colors
         glow = clamp(glow, 0.0, 1.0);
 
         // Mix the original color with the amplified glow
-        vec3 neonColor = mix(texColor.rgb, glow, 0.7); // Increase the mix factor for more glow dominance
-
-        // Set the final fragment color
+        vec3 neonColor = mix(texColor.rgb, glow, 0.7); 
         FragColor = vec4(neonColor, texColor.a);
+
     }else{
         FragColor = texColor; 
     }

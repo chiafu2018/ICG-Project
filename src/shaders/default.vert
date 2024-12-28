@@ -4,9 +4,6 @@ layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoord;
 layout (location = 3) in float aVertexColor;
 
-// out vec2 TexCoord;
-// out vec4 outColor; 
-
 out VS_OUT {
    vec2 TexCoord;
    vec4 outColor; 
@@ -15,8 +12,6 @@ out VS_OUT {
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
-uniform float squeezeFactor;
 
 void main()
 {
